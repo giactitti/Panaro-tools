@@ -35,7 +35,7 @@ __copyright__ = '(C) 2021 by Giacomo Titti'
 import sys
 
 from sklearn.grid_search import ParameterSampler
-sys.setrecursionlimit(10000)
+sys.setrecursionlimit(100000)
 from qgis.PyQt.QtCore import QCoreApplication,QVariant
 from qgis.core import (QgsProcessing,
                        QgsFeatureSink,
@@ -65,7 +65,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterField,
                        QgsProcessingParameterVectorDestination,
-                       QgsProcessingContext
+                       QgsProcessingContext,
+                       QgsPoint
                        )
 from qgis.core import *
 from qgis.utils import iface
@@ -197,16 +198,50 @@ class taneAlgorithm(QgsProcessingAlgorithm):
             'tzero': parameters['tzero'],
             'tuno': parameters['tuno'],
             'id' : parameters['id'],
-            'field_tuno':parameters['field_tuno'],
-            'folder':parameters['folder']
+            'field_tuno':parameters['field_tuno']
         }
-        self.load(alg_params)
+        outputs['layers'],outputs['crs']=self.load(alg_params)
+
+
+        alg_params = {
+            'CRS': outputs['crs'],
+            'LAYERS': outputs['layers'],
+            'OUTPUT': parameters['folder']+'merged_vectors.gpkg'
+        }
+        outputs['out'] = processing.run('native:mergevectorlayers', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+ 
+        print(outputs['out'])
+        # alg_params = {
+        #         'tzero': parameters['tzero'],
+        #         'df': outputs['df'],
+        #         'crs': outputs['crs'],
+        #         'folder':parameters['folder']
+        #     }
+        # parameters['out']=self.save(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
 
         results['out'] = []
+
+        fileName = outputs['out']['OUTPUT']
+        layer1 = QgsVectorLayer(fileName,"test","ogr")
+        subLayers =layer1.dataProvider().subLayers()
+
+        for subLayer in subLayers:
+            name = subLayer.split('!!::!!')[1]
+            print(name,'name')
+            uri = "%s|layername=%s" % (fileName, name,)
+            print(uri,'uri')
+            # Create layer
+            sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
+            if not sub_vlayer.isValid():
+                print('layer failed to load')
+            # Add layer to map
+            context.temporaryLayerStore().addMapLayer(sub_vlayer)
+            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
+
 
         feedback.setCurrentStep(4)
         if feedback.isCanceled():
@@ -215,37 +250,131 @@ class taneAlgorithm(QgsProcessingAlgorithm):
         return results
 
     def load(self,parameters):
+        
         layer_t0 = QgsVectorLayer(parameters['tzero'], '', 'ogr')
+        
+    #     features = layer_t0.getFeatures()
+    #     index=[]
+    #     for feature in features:
+    #         index.append(parameters['id'])
+    #     max_id=max(index)
+
+    #     df_0,nomi,crs=self.vector2df(layer_t0,parameters['id'],max_id)
+
+    #     #############################
+
         layer_t1 = QgsVectorLayer(parameters['tuno'], '', 'ogr')
+    #     df_1,nomi_1,crs_1=self.vector2df(layer_t1,id,max_id,parameters['field_tuno'])
+
+
+    #     df = pd.concat([df_0,df_1], sort=False)
+
+    #     return df,crs
+
+
+
+    # def vector2df(self,layer,id,max_id,fields=None):
+
+    #     crs=layer.crs()
+    #     campi=[]
+    #     for field in layer.fields():
+    #         campi.append(field.name())
+    #     campi.append('geom')
+    #     gdp=pd.DataFrame(columns=campi,dtype=float)
+    #     features = layer.getFeatures()
+    #     count=0
+    #     feat=[]
+    #     for feature in features:
+    #         attr=feature.attributes()
+    #         attr=[str(x) for x in attr]
+    #         print(attr,'attr')
+    #         geom = feature.geometry()
+    #         feat=attr+[str(geom.asWkt())]
+    #         gdp.loc[len(gdp)] = feat
+    #         count=+ 1
+    #     print(gdp.to_string())
+    #     # print(gdp.astype('string'))
+    #     print(self.f+'/file.csv')
+    #     # print(ciao)
+    #     gdp.to_csv(self.f+'/file.csv',header=True, index=False, encoding='utf-8')
+    #     del gdp
+
+    #     gdp=pd.read_csv(self.f+'/file.csv')
+    #     if fields == None:
+    #         df=gdp
+    #     else:
+    #         df=gdp[fields]
+    #         gdp['IDD']=max_id+np.arange(1,len(gdp.iloc[:,0])+1)
+    #         df[id]=gdp['IDD']
+        
+    #     nomi=list(df.head())
+        
+    #     df['geom']=gdp['geom']
+
+    #     return df,nomi,crs
+
+
+
+
 
         crs=layer_t0.crs()
 
-        new_field = QgsField( 'ID', QVariant.Int)
-        layer_t1.dataProvider().addAttributes([new_field])
+        #new_field = QgsField( 'ID', QVariant.Int)
+        #layer_t1.dataProvider().addAttributes([new_field])
         #layer_t1.updateFields()
 
         #idx=layer_t0.fieldNameIndex(parameters['ID'])
         #max_id=layer_t0.maximumValue(idx)
 
-        features = layer_t1.getFeatures()
+        attr1=layer_t1.fields().names()
+        if not parameters['id'] in attr1:
+            new_field = QgsField(parameters['id'][0], QVariant.Int)
+            layer_t1.dataProvider().addAttributes([new_field])
+            layer_t1.updateFields()
+
+
+        #attr0=layer_t1.getFeature(1).attributes()
+
+
+        # features = layer_t0.getFeatures()
+        # print(features)
 
         index=[]
-        for feature in features:
-            index.append(feature['ID'])
+        for feature in layer_t0.getFeatures():
+            index.append(feature[parameters['id'][0]])
         max_id=max(index)
 
 
+        # features_t1 = layer_t1.getFeatures()
+        # print(features_t1)
         
         id=max_id
-        campi=['ID']+parameters['field_tuno']
-        for feature in features:
-            id=id+1
-            feature['ID']=id
+        #campi=parameters['id']+parameters['field_tuno']
+        #print(id)
+
+        for feature in layer_t1.getFeatures():
             #attr=feature.attributes()
-            layer_t0.dataProvider.addFeatures([feature[campi]])
-        layer_t0.updateFields()
-        layer_t0.updateExtents()
-        return(layer_t0)
+            id+=1
+            feature[parameters['id'][0]]=id
+        #layer_t1.updateFields()
+        #layer_t1.updateExtents()
+        #iface.mapCanvas().refresh()
+
+        layers=[layer_t0,layer_t1]
+
+
+        # feat = QgsFeature()
+        # feat.addAttribute(0,100)
+        # feat.setGeometry(QgsGeometry.fromPoint(QgsPoint(123,456)))
+        # layer_t0.dataProvider.addFeature(feat)
+        # print('ciao')
+        
+        # layer_t0.updateFields()
+        # layer_t0.updateExtents()
+        # iface.mapCanvas().refresh()
+        return(layers,crs)
+
+        
     
     #def save_base_layer(self,parameters):
 
@@ -259,16 +388,14 @@ class taneAlgorithm(QgsProcessingAlgorithm):
         fields = QgsFields()
 
         #fields.append(QgsField('ID', QVariant.Int))
+        layer=QgsVectorLayer(parameters['tzero'], '', 'ogr')
 
-        for field in nomi:
-            if field=='ID':
-                fields.append(QgsField(field, QVariant.Int))
-            if field=='geom':
-                continue
-            if field=='y':
-                fields.append(QgsField(field, QVariant.Int))
-            else:
-                fields.append(QgsField(field, QVariant.Double))
+
+
+        for field in layer.fields():
+            type=field.typeName()
+            print(type)
+            fields.append(QgsField(field.name(), type))
 
         #crs = QgsProject.instance().crs()
         transform_context = QgsProject.instance().transformContext()
@@ -277,7 +404,7 @@ class taneAlgorithm(QgsProcessingAlgorithm):
         save_options.fileEncoding = 'UTF-8'
 
         writer = QgsVectorFileWriter.create(
-          parameters['OUT'],
+          parameters['folder']+'/out.gpkg',
           fields,
           QgsWkbTypes.Polygon,
           parameters['crs'],
@@ -295,6 +422,7 @@ class taneAlgorithm(QgsProcessingAlgorithm):
 
         # delete the writer to flush features to disk
         del writer
+        return parameters['folder']+'/out.gpkg'
 
     def addmap(self,parameters):
         context=parameters()
