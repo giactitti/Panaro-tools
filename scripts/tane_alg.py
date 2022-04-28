@@ -208,9 +208,9 @@ class taneAlgorithm(QgsProcessingAlgorithm):
             'LAYERS': outputs['layers'],
             'OUTPUT': parameters['folder']+'merged_vectors.gpkg'
         }
-        outputs['out'] = processing.run('native:mergevectorlayers', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        #outputs['out'] = processing.run('native:mergevectorlayers', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
  
-        print(outputs['out'])
+        #print(outputs['out'])
         # alg_params = {
         #         'tzero': parameters['tzero'],
         #         'df': outputs['df'],
@@ -225,22 +225,22 @@ class taneAlgorithm(QgsProcessingAlgorithm):
 
         results['out'] = []
 
-        fileName = outputs['out']['OUTPUT']
-        layer1 = QgsVectorLayer(fileName,"test","ogr")
-        subLayers =layer1.dataProvider().subLayers()
+        # fileName = outputs['out']['OUTPUT']
+        # layer1 = QgsVectorLayer(fileName,"test","ogr")
+        # subLayers =layer1.dataProvider().subLayers()
 
-        for subLayer in subLayers:
-            name = subLayer.split('!!::!!')[1]
-            print(name,'name')
-            uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
-            # Create layer
-            sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-            if not sub_vlayer.isValid():
-                print('layer failed to load')
-            # Add layer to map
-            context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
+        # for subLayer in subLayers:
+        #     name = subLayer.split('!!::!!')[1]
+        #     print(name,'name')
+        #     uri = "%s|layername=%s" % (fileName, name,)
+        #     print(uri,'uri')
+        #     # Create layer
+        #     sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
+        #     if not sub_vlayer.isValid():
+        #         print('layer failed to load')
+        #     # Add layer to map
+        #     context.temporaryLayerStore().addMapLayer(sub_vlayer)
+        #     context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
 
 
         feedback.setCurrentStep(4)
@@ -317,7 +317,7 @@ class taneAlgorithm(QgsProcessingAlgorithm):
 
 
 
-        crs=layer_t0.crs()
+        
 
         #new_field = QgsField( 'ID', QVariant.Int)
         #layer_t1.dataProvider().addAttributes([new_field])
@@ -326,11 +326,13 @@ class taneAlgorithm(QgsProcessingAlgorithm):
         #idx=layer_t0.fieldNameIndex(parameters['ID'])
         #max_id=layer_t0.maximumValue(idx)
 
-        attr1=layer_t1.fields().names()
-        if not parameters['id'] in attr1:
-            new_field = QgsField(parameters['id'][0], QVariant.Int)
-            layer_t1.dataProvider().addAttributes([new_field])
-            layer_t1.updateFields()
+        # attr1=layer_t1.fields().names()
+        # print(attr1,'names t1')
+        # print(parameters['id'],'id')
+        # if not parameters['id'] in attr1:
+        #     new_field = QgsField(parameters['id'][0], QVariant.Int)
+        #     layer_t1.dataProvider().addAttributes([new_field])
+        #     layer_t1.updateFields()
 
 
         #attr0=layer_t1.getFeature(1).attributes()
@@ -338,6 +340,8 @@ class taneAlgorithm(QgsProcessingAlgorithm):
 
         # features = layer_t0.getFeatures()
         # print(features)
+
+        crs=layer_t0.crs()
 
         index=[]
         for feature in layer_t0.getFeatures():
@@ -349,18 +353,43 @@ class taneAlgorithm(QgsProcessingAlgorithm):
         # print(features_t1)
         
         id=max_id
-        #campi=parameters['id']+parameters['field_tuno']
-        #print(id)
 
         for feature in layer_t1.getFeatures():
-            #attr=feature.attributes()
+            feat = QgsFeature(layer_t0.fields())
+            for field in parameters['field_tuno']:
+                feat.setAttribute(field, feature[field])
+            feat.setGeometry(feature.geometry())
             id+=1
-            feature[parameters['id'][0]]=id
-        #layer_t1.updateFields()
-        #layer_t1.updateExtents()
-        #iface.mapCanvas().refresh()
+            feat[parameters['id'][0]]= id
+
+            (res, outFeats) = layer_t0.dataProvider().addFeatures([feat])
+
 
         layers=[layer_t0,layer_t1]
+        #campi=parameters['id']+parameters['field_tuno']
+        #print(id)
+        # with edit(layer_t1):
+        #     for feature in layer_t1.getFeatures():
+        #         #     #attr=feature.attributes()
+        #         id+=1
+        #         feature[parameters['id'][0]]= 13
+        #         layer_t1.updateFeature(feature)
+        #     #     print(id,'id')
+        #     #     feature[parameters['id'][0]]=id
+        #     #     print(feature[parameters['id'][0]],'feat')
+
+        # # with edit(layer_t1):
+        # #     feat = next(layer_t1.getFeatures())
+        # #     feat[parameters['id'][0]]=3
+        # #     layer_t1.updateFeature(feat)
+        
+        # layer_t1.updateFields()
+        # #layer_t1.updateExtents()
+        # iface.mapCanvas().refresh()
+
+
+
+
 
 
         # feat = QgsFeature()
