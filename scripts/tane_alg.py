@@ -34,7 +34,6 @@ __copyright__ = '(C) 2021 by Giacomo Titti'
 
 import sys
 
-from sklearn.grid_search import ParameterSampler
 sys.setrecursionlimit(100000)
 from qgis.PyQt.QtCore import QCoreApplication,QVariant
 from qgis.core import (QgsProcessing,
@@ -78,12 +77,10 @@ import operator
 import random
 from qgis import *
 # ##############################
-import matplotlib.pyplot as plt
 import csv
 from processing.algs.gdal.GdalUtils import GdalUtils
 
 #import geopandas as gd
-import pandas as pd
 
 # pd.set_option('display.max_columns', 20)
 # #pd.set_option('display.max_rows', 20)
