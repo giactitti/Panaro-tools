@@ -18,7 +18,7 @@ It can be installed on QGIS3.x adding the Plugin Repository to QGIS ```manage an
 
 or
 
-cloning the [GitHub repository](https://github.com/giactitti/Panaro-tools) or downloading it as zip file (and than unzipping it) and copying the ```sz_module``` folder in your local ```python/plugin``` folder (read [here](https://docs.qgis.org/3.10/en/docs/user_manual/plugins/plugins.html#core-and-external-plugins) for more information).
+cloning the [GitHub repository](https://github.com/giactitti/Panaro-tools) or downloading it as zip file (and than unzipping it) and copying the ```panaro_module``` folder in your local ```python/plugin``` folder (read [here](https://docs.qgis.org/3.10/en/docs/user_manual/plugins/plugins.html#core-and-external-plugins) for more information).
 
 Lunch QGIS 3.x, and abilitate the plugin from ```manage and install plugin/installed/panaro-plugin```
 
