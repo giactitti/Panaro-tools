@@ -13,7 +13,7 @@ It can be installed on QGIS3.x adding the Plugin Repository to QGIS ```manage an
 
 - edit repository and add [https://www.plugins.geoai.it/panaro-plugin/tools.xml](https://www.plugins.geoai.it/panaro-plugin/tools.xml)
 
-<img src="./images/repodetail.png" width="500">
+<img src="./images/repodetails.png" width="500">
 <p>
 
 or
