@@ -67,7 +67,7 @@ class classeProvider(QgsProcessingProvider):
         string should be a unique, short, character only string, eg "qgis" or
         "gdal". This string should not be localised.
         """
-        return 'panaro'
+        return 'Panaro'
 
     def name(self):
         """
@@ -76,7 +76,7 @@ class classeProvider(QgsProcessingProvider):
 
         This string should be short (e.g. "Lastools") and localised.
         """
-        return self.tr('panaro')
+        return self.tr('Panaro')
 
     def icon(self):
         """

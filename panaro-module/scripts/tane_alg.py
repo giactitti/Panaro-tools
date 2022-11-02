@@ -104,10 +104,10 @@ class taneAlgorithm(QgsProcessingAlgorithm):
         return self.tr('01 Tane')
 
     def group(self):
-        return self.tr('Panaro')
+        return self.tr('Tools')
 
     def groupId(self):
-        return 'panaro'
+        return 'Panaro'
 
     def shortHelpString(self):
         return self.tr("This function join point files")
@@ -209,11 +209,13 @@ class taneAlgorithm(QgsProcessingAlgorithm):
 
         alg_params = {
             'tzero': parameters['tzero'],
-            'tuno': parameters['tuno'],
+            #'tuno': parameters['tuno'],
+            'tuno':outputs['outlayer'],
             'id_tzero' : parameters['id'],
             'id_tuno':parameters['id_tuno'],
             'Output':parameters['folder']+'/buffer_all.shp',
-            'radious': [50,100]
+            'radious': [50,100],
+            'folder':parameters['folder']
         }
         outputs['outlayer']=self.loop_buffer(alg_params,context,feedback)
 
@@ -323,24 +325,40 @@ class taneAlgorithm(QgsProcessingAlgorithm):
                 'FIELD_2': parameters['id_tzero'][0],
                 'INPUT': parameters['tzero'],
                 'INPUT_2': outputs['JoinAttributesByLocation'+str(rad)]['OUTPUT'],
-                'METHOD': 1,
+                'METHOD': 0,
                 'PREFIX': '',
                 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
             }
             outputs['JoinAttributesByFieldValue'+str(rad)] = processing.run('native:joinattributestable', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-                # Join attributes by field value ultimo
+            
+            print(parameters['id_tzero'][0])
+            print(str(rad)+'m_'+parameters['id_tzero'][0])
+            print(outputs['JoinAttributesByFieldValue'+str(rad)])
+            # Aggregate
+            alg_params = {
+                'AGGREGATES': [{'aggregate': 'first_value','delimiter': ',','input': parameters['id_tzero'][0],'length': 10,'name': parameters['id_tzero'][0],'precision': 0,'sub_type': 0,'type': 4,'type_name': 'int8'},{'aggregate': 'array_agg','delimiter': ',','input': '"'+str(rad)+'m_'+parameters['id_tzero'][0]+'"','length': 10,'name': str(rad)+'m_'+parameters['id_tzero'][0],'precision': 0,'sub_type': 4,'type': 9,'type_name': 'integer64list'}],
+                'GROUP_BY': parameters['id_tzero'][0],
+                'INPUT': outputs['JoinAttributesByFieldValue'+str(rad)]['OUTPUT'],
+                'OUTPUT': parameters['folder']+'/tane_all'+str(count)+'.shp'#QgsProcessing.TEMPORARY_OUTPUT
+            }
+            outputs['Aggregate'] = processing.run('native:aggregate', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+            outputs['Aggregate'+str(rad)] = outputs['Aggregate']['OUTPUT']
+
+            print('ai')
+            
+            # Join attributes by field value ultimo
 
             if count==0:
-                primo_out=outputs['JoinAttributesByFieldValue'+str(rad)]
+                primo_out=outputs['Aggregate'+str(rad)]
             else:
                 alg_params = {
                     'DISCARD_NONMATCHING': False,
                     'FIELD': parameters['id_tzero'][0],
                     'FIELDS_TO_COPY': [str(rad)+'m_'+parameters['id_tzero'][0]],
                     'FIELD_2': parameters['id_tzero'][0],
-                    'INPUT': primo_out['OUTPUT'],
-                    'INPUT_2': outputs['JoinAttributesByFieldValue'+str(rad)]['OUTPUT'],
-                    'METHOD': 1,
+                    'INPUT': primo_out,
+                    'INPUT_2': outputs['Aggregate'+str(rad)],
+                    'METHOD': 0,
                     'PREFIX': '',
                     'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
                 }
